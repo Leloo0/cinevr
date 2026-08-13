@@ -38,7 +38,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0000ff");
+    scene.background = new THREE.Color("#0a0a0a");
     
 
     const camera = new THREE.PerspectiveCamera(
@@ -75,7 +75,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     // Curved main screen
     const screenGeo = new THREE.CylinderGeometry(16, 16, 8, 64, 1, true, Math.PI - 0.55, 1.1);
     const screenMat = new THREE.MeshBasicMaterial({
-      color: 0x00ff00,
+      color: 0xf2f4ff,
       side: THREE.DoubleSide,
     });
     const screen = new THREE.Mesh(screenGeo, screenMat);
@@ -89,11 +89,12 @@ export default function TheaterScene({ format, focusSeat }: Props) {
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 0.28,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
       }),
     );
     screenGlow.scale.setScalar(1.03);
     screenGlow.position.copy(screen.position);
-    screenGlow.visible = false;
     scene.add(screenGlow);
 
     // Side projection walls (ScreenX)
@@ -102,6 +103,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
       transparent: true,
       opacity: 0,
       side: THREE.DoubleSide,
+      depthWrite: false,
     });
     const sideMatR = sideMatL.clone();
     const sideGeo = new THREE.PlaneGeometry(26, 6.5);
@@ -159,11 +161,6 @@ export default function TheaterScene({ format, focusSeat }: Props) {
       scene.add(step);
     });
 
-    console.log("DBG screen", screen.position.toArray(), screenGeo.attributes.position.count);
-    {
-      const box = new THREE.Box3().setFromObject(screen);
-      console.log("DBG bbox", box.min.toArray(), box.max.toArray());
-    }
     let raf = 0;
     let flicker = 0;
     const desiredPos = new THREE.Vector3();

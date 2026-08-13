@@ -118,12 +118,13 @@ export default function TheaterScene({ format, focusSeat }: Props) {
       color: 0x1a1a1a,
       roughness: 0.8,
     });
-    for (const sx of [-8.4, 8.4]) {
-      const panel: THREE.Mesh | null = null; void panelMat; if (panel) scene.add(panel); const _p = new THREE.Mesh(new THREE.PlaneGeometry(28, 8), panelMat);
+    for (const sx of [-9.2, 9.2]) {
+      const panel = new THREE.Mesh(new THREE.PlaneGeometry(28, 8), panelMat);
       panel.position.set(sx, 4, 4);
       panel.rotation.y = sx < 0 ? Math.PI / 2 : -Math.PI / 2;
       scene.add(panel);
     }
+
 
     // Seats
     const seatGeo = new THREE.BoxGeometry(0.8, 0.55, 0.7);

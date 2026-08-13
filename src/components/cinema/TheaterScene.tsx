@@ -76,7 +76,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     const screenGeo = new THREE.CylinderGeometry(16, 16, 8, 64, 1, true, Math.PI - 0.55, 1.1);
     const screenMat = new THREE.MeshBasicMaterial({
       color: 0xf2f4ff,
-      side: THREE.BackSide,
+      side: THREE.DoubleSide,
     });
     const screen = new THREE.Mesh(screenGeo, screenMat);
     screen.position.set(0, 4.2, 10);
@@ -86,7 +86,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
       screenGeo.clone(),
       new THREE.MeshBasicMaterial({
         color: 0xff2e3b,
-        side: THREE.BackSide,
+        side: THREE.DoubleSide,
         transparent: true,
         opacity: 0.28,
       }),

@@ -27,18 +27,18 @@ export type SnackItem = {
   desc: string;
   price: number;
   category: "Popcorn" | "Drinks" | "Combos" | "Candy";
-  emoji: string;
+  icon: "popcorn" | "cup" | "combo" | "candy";
 };
 
 export const SNACKS: SnackItem[] = [
-  { id: "pop-s", name: "Classic Butter", desc: "Small popcorn · 90g", price: 6.5, category: "Popcorn", emoji: "🍿" },
-  { id: "pop-l", name: "Truffle Grande", desc: "Large popcorn · 220g", price: 11, category: "Popcorn", emoji: "🍿" },
-  { id: "drk-c", name: "Cola Zero", desc: "700ml chilled", price: 5.5, category: "Drinks", emoji: "🥤" },
-  { id: "drk-s", name: "Craft Lemonade", desc: "500ml, real citrus", price: 7, category: "Drinks", emoji: "🍋" },
-  { id: "cmb-1", name: "Duo Night", desc: "2 drinks + large popcorn", price: 19.5, category: "Combos", emoji: "🎬" },
-  { id: "cmb-2", name: "VR Feast", desc: "Nachos, combo drink, candy", price: 26, category: "Combos", emoji: "🌮" },
-  { id: "cnd-1", name: "Dark Choc Bites", desc: "70% cacao · 120g", price: 4.5, category: "Candy", emoji: "🍫" },
-  { id: "cnd-2", name: "Sour Nebula", desc: "Sour gummies · 150g", price: 4, category: "Candy", emoji: "🍬" },
+  { id: "pop-s", name: "Classic Butter", desc: "Small popcorn · 90g", price: 6.5, category: "Popcorn", icon: "popcorn" },
+  { id: "pop-l", name: "Truffle Grande", desc: "Large popcorn · 220g", price: 11, category: "Popcorn", icon: "popcorn" },
+  { id: "drk-c", name: "Cola Zero", desc: "700ml chilled", price: 5.5, category: "Drinks", icon: "cup" },
+  { id: "drk-s", name: "Craft Lemonade", desc: "500ml, real citrus", price: 7, category: "Drinks", icon: "cup" },
+  { id: "cmb-1", name: "Duo Night", desc: "2 drinks + large popcorn", price: 19.5, category: "Combos", icon: "combo" },
+  { id: "cmb-2", name: "VR Feast", desc: "Nachos, combo drink, candy", price: 26, category: "Combos", icon: "combo" },
+  { id: "cnd-1", name: "Dark Choc Bites", desc: "70% cacao · 120g", price: 4.5, category: "Candy", icon: "candy" },
+  { id: "cnd-2", name: "Sour Nebula", desc: "Sour gummies · 150g", price: 4, category: "Candy", icon: "candy" },
 ];
 
 export const SNACK_CATEGORIES = ["Popcorn", "Drinks", "Combos", "Candy"] as const;

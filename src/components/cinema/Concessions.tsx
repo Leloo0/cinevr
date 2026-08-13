@@ -1,4 +1,4 @@
-import { Minus, Plus } from "lucide-react";
+import { Candy, CupSoda, Minus, Plus, Popcorn, Sandwich } from "lucide-react";
 import { SNACKS, SNACK_CATEGORIES, currency } from "@/lib/cinema";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +6,13 @@ type Props = {
   quantities: Record<string, number>;
   onChange: (id: string, delta: number) => void;
 };
+
+const ICONS = { popcorn: Popcorn, cup: CupSoda, combo: Sandwich, candy: Candy } as const;
+
+function SnackIcon({ icon }: { icon: keyof typeof ICONS }) {
+  const Comp = ICONS[icon];
+  return <Comp className="h-5 w-5" />;
+}
 
 export function Concessions({ quantities, onChange }: Props) {
   return (
@@ -24,8 +31,11 @@ export function Concessions({ quantities, onChange }: Props) {
                     qty > 0 && "glow-red",
                   )}
                 >
-                  <span className="text-3xl" aria-hidden>
-                    {s.emoji}
+                  <span
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-primary/25 bg-secondary text-primary"
+                    aria-hidden
+                  >
+                    <SnackIcon icon={s.icon} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{s.name}</p>

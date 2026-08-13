@@ -38,8 +38,8 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0a0a0a");
-    scene.fog = new THREE.Fog("#0a0a0a", 30, 70);
+    scene.background = new THREE.Color("#0000ff");
+    
 
     const camera = new THREE.PerspectiveCamera(
       58,
@@ -93,6 +93,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     );
     screenGlow.scale.setScalar(1.03);
     screenGlow.position.copy(screen.position);
+    screenGlow.visible = false;
     scene.add(screenGlow);
 
     // Side projection walls (ScreenX)

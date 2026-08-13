@@ -24,7 +24,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     camPos: THREE.Vector3;
     sideOpacity: number;
   }>({
-    target: new THREE.Vector3(0, 1.6, 8),
+    target: new THREE.Vector3(0, 1.6, -6),
     camPos: new THREE.Vector3(0, 6.5, 16),
     sideOpacity: 0,
   });
@@ -39,7 +39,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#0a0a0a");
-    scene.fog = new THREE.Fog("#0a0a0a", 18, 46);
+    scene.fog = new THREE.Fog("#0a0a0a", 30, 70);
 
     const camera = new THREE.PerspectiveCamera(
       58,
@@ -57,10 +57,10 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     // Lighting
     scene.add(new THREE.AmbientLight(0x331014, 1.4));
     const screenLight = new THREE.PointLight(0xff4455, 40, 60, 2);
-    screenLight.position.set(0, 4, -4);
+    screenLight.position.set(0, 5, -3);
     scene.add(screenLight);
     const aisle = new THREE.PointLight(0xe50914, 12, 30, 2);
-    aisle.position.set(0, 1, 14);
+    aisle.position.set(0, 1, 15);
     scene.add(aisle);
 
     // Floor
@@ -73,13 +73,13 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     scene.add(floor);
 
     // Curved main screen
-    const screenGeo = new THREE.CylinderGeometry(16, 16, 8, 64, 1, true, -0.55, 1.1);
+    const screenGeo = new THREE.CylinderGeometry(16, 16, 8, 64, 1, true, Math.PI - 0.55, 1.1);
     const screenMat = new THREE.MeshBasicMaterial({
       color: 0xf2f4ff,
       side: THREE.BackSide,
     });
     const screen = new THREE.Mesh(screenGeo, screenMat);
-    screen.position.set(0, 4.2, 12);
+    screen.position.set(0, 4.2, 10);
     scene.add(screen);
 
     const screenGlow = new THREE.Mesh(
@@ -105,11 +105,11 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     const sideMatR = sideMatL.clone();
     const sideGeo = new THREE.PlaneGeometry(26, 6.5);
     const leftWall = new THREE.Mesh(sideGeo, sideMatL);
-    leftWall.position.set(-8.2, 3.6, 9);
+    leftWall.position.set(-8.2, 3.6, 3);
     leftWall.rotation.y = Math.PI / 2;
     scene.add(leftWall);
     const rightWall = new THREE.Mesh(sideGeo, sideMatR);
-    rightWall.position.set(8.2, 3.6, 9);
+    rightWall.position.set(8.2, 3.6, 3);
     rightWall.rotation.y = -Math.PI / 2;
     scene.add(rightWall);
 
@@ -120,7 +120,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     });
     for (const sx of [-8.4, 8.4]) {
       const panel = new THREE.Mesh(new THREE.PlaneGeometry(28, 8), panelMat);
-      panel.position.set(sx, 4, 8);
+      panel.position.set(sx, 4, 4);
       panel.rotation.y = sx < 0 ? Math.PI / 2 : -Math.PI / 2;
       scene.add(panel);
     }
@@ -178,11 +178,11 @@ export default function TheaterScene({ format, focusSeat }: Props) {
 
       if (seat) {
         const p = seatWorldPos(seat);
-        desiredPos.set(p.x, p.y + 0.45, p.z - 0.2);
-        desiredTarget.set(p.x * 0.25, 4, 12);
+        desiredPos.set(p.x, p.y + 0.45, p.z + 0.1);
+        desiredTarget.set(p.x * 0.25, 4, -8);
       } else {
-        desiredPos.set(0, 7.5, 17);
-        desiredTarget.set(0, 3.6, 11);
+        desiredPos.set(0, 8.5, 18);
+        desiredTarget.set(0, 3.6, -6);
       }
 
       camera.position.lerp(desiredPos, 0.045);

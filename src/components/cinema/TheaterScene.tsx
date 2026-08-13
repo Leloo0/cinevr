@@ -158,6 +158,11 @@ export default function TheaterScene({ format, focusSeat }: Props) {
       scene.add(step);
     });
 
+    console.log("DBG screen", screen.position.toArray(), screenGeo.attributes.position.count);
+    {
+      const box = new THREE.Box3().setFromObject(screen);
+      console.log("DBG bbox", box.min.toArray(), box.max.toArray());
+    }
     let raf = 0;
     let flicker = 0;
     const desiredPos = new THREE.Vector3();

@@ -75,7 +75,7 @@ export default function TheaterScene({ format, focusSeat }: Props) {
     // Curved main screen
     const screenGeo = new THREE.CylinderGeometry(16, 16, 8, 64, 1, true, Math.PI - 0.55, 1.1);
     const screenMat = new THREE.MeshBasicMaterial({
-      color: 0xf2f4ff,
+      color: 0xc7cde3,
       side: THREE.DoubleSide,
     });
     const screen = new THREE.Mesh(screenGeo, screenMat);

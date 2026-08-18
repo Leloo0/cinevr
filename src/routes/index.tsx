@@ -1,36 +1,41 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ClientOnly } from "@tanstack/react-router";
+import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useMemo, useState } from "react";
-import { Clapperboard, Sparkles, Ticket } from "lucide-react";
+import { Clapperboard, Sparkles } from "lucide-react";
 import { SeatMap } from "@/components/cinema/SeatMap";
 import { Concessions } from "@/components/cinema/Concessions";
-import { FORMATS, SNACKS, currency, type FormatId } from "@/lib/cinema";
-import { cn } from "@/lib/utils";
+import { MoviePicker } from "@/components/cinema/MoviePicker";
+import { Stepper } from "@/components/cinema/Stepper";
+import { OrderSidebar } from "@/components/cinema/OrderSidebar";
+import { Payment, type PaymentMethod } from "@/components/cinema/Payment";
+import { Voucher } from "@/components/cinema/Voucher";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  BOOKING_FEE_PER_SEAT,
+  FORMATS,
+  MOVIES,
+  SNACKS,
+  currency,
+  type FormatId,
+  type Movie,
+  type Showtime,
+} from "@/lib/cinema";
+import { cn } from "@/lib/utils";
 
 const TheaterScene = lazy(() => import("@/components/cinema/TheaterScene"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CINE-VR · Interstellar Special Edition Tickets" },
+      { title: "CINE-VR · Ingressos de cinema com prévia 3D dos assentos" },
       {
         name: "description",
         content:
-          "Pick your seat in a live 3D theater preview, choose IMAX or ScreenX 270°, add concessions and check out in seconds.",
+          "Escolha filme, sessão e assento com prévia sensorial 3D em IMAX ou ScreenX 270°, adicione itens da bomboniere e receba seu ingresso digital com QR Code.",
       },
-      { property: "og:title", content: "CINE-VR · Interstellar Special Edition Tickets" },
+      { property: "og:title", content: "CINE-VR · Ingressos com prévia 3D dos assentos" },
       {
         property: "og:description",
         content:
-          "3D sensory seat preview, IMAX & ScreenX formats, and concessions — book your cinema night with CINE-VR.",
+          "Compra de ingressos em 5 etapas: sessão, assento com visualização 3D, bomboniere, pagamento via PIX ou cartão e voucher digital.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -40,13 +45,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const [step, setStep] = useState(1);
+  const [movieId, setMovieId] = useState<string | null>(null);
+  const [showtime, setShowtime] = useState<Showtime | null>(null);
   const [format, setFormat] = useState<FormatId>("imax");
   const [seats, setSeats] = useState<string[]>([]);
   const [focusSeat, setFocusSeat] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [purchased, setPurchased] = useState(false);
+  const [method, setMethod] = useState<PaymentMethod>("pix");
+  const [card, setCard] = useState({ name: "", number: "", expiry: "", cvv: "" });
+  const [code, setCode] = useState("");
 
+  const movie = MOVIES.find((m) => m.id === movieId) ?? null;
   const activeFormat = FORMATS.find((f) => f.id === format)!;
 
   const toggleSeat = (id: string) => {
@@ -69,206 +79,261 @@ function Index() {
 
   const ticketsTotal = seats.length * activeFormat.price;
   const snacksTotal = snackLines.reduce((a, l) => a + l.total, 0);
-  const fees = seats.length > 0 ? 2.5 : 0;
+  const fees = seats.length * BOOKING_FEE_PER_SEAT;
   const grandTotal = ticketsTotal + snacksTotal + fees;
+
+  const pixPayload = `00020126CINEVR${(movie?.id ?? "sessao").toUpperCase()}${(showtime ?? "").replace(":", "")}5204899953039865802BR5909CINE-VR6009SAO PAULO54${grandTotal.toFixed(2)}6304A1B2`;
+
+  const cardOk =
+    card.name.trim().length > 2 &&
+    card.number.replace(/\D/g, "").length >= 13 &&
+    card.expiry.trim().length >= 4 &&
+    card.cvv.trim().length >= 3;
+
+  const canAdvance =
+    step === 1
+      ? Boolean(movie && showtime)
+      : step === 2
+        ? seats.length > 0
+        : step === 3
+          ? true
+          : step === 4
+            ? method === "pix" || cardOk
+            : true;
+
+  const hint =
+    step === 1 && !canAdvance
+      ? "Escolha um filme e um horário"
+      : step === 2 && !canAdvance
+        ? "Selecione ao menos um assento"
+        : step === 4 && !canAdvance
+          ? "Preencha os dados do cartão"
+          : undefined;
+
+  const nextLabel =
+    step === 4 ? "Pagar " + currency(grandTotal) : step === 5 ? "Nova compra" : "Avançar";
+
+  const goNext = () => {
+    if (step === 4) {
+      setCode(`CVR-${Math.abs(hashCode(pixPayload)).toString(36).toUpperCase().slice(0, 8)}`);
+      setStep(5);
+      return;
+    }
+    if (step === 5) {
+      setStep(1);
+      setMovieId(null);
+      setShowtime(null);
+      setSeats([]);
+      setFocusSeat(null);
+      setQuantities({});
+      setCard({ name: "", number: "", expiry: "", cvv: "" });
+      return;
+    }
+    setStep((s) => Math.min(5, s + 1));
+  };
+
+  const sidebarLines = [
+    { label: "Filme", value: movie?.title ?? "Não escolhido" },
+    { label: "Sessão", value: showtime ? `Hoje · ${showtime}` : "—" },
+    { label: "Formato", value: activeFormat.name },
+    {
+      label: `Assentos (${seats.length})`,
+      value: seats.length ? [...seats].sort().join(", ") : "Nenhum",
+    },
+    { label: "Ingressos", value: currency(ticketsTotal) },
+    ...snackLines.map((l) => ({ label: `${l.qty}× ${l.name}`, value: currency(l.total) })),
+    { label: "Taxa de conveniência", value: currency(fees) },
+  ];
 
   return (
     <div className="min-h-screen hero-veil">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="grid h-9 w-9 place-items-center rounded-lg"
-              style={{ background: "var(--gradient-red)", boxShadow: "var(--glow-red)" }}
-            >
-              <Clapperboard className="h-5 w-5 text-primary-foreground" />
-            </span>
-            <span className="font-display text-lg font-bold tracking-[0.18em]">CINE-VR</span>
-          </div>
-
-          <div className="hidden h-8 w-px bg-border md:block" />
-
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-bold sm:text-lg">
-              Interstellar: <span className="text-gradient-red">Special Edition</span>
-            </h1>
-            <p className="text-xs text-muted-foreground">Today · 21:40 · Hall 07</p>
-          </div>
-
-          <div className="ml-auto flex flex-wrap gap-1.5 rounded-xl border border-border p-1">
-            {FORMATS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFormat(f.id)}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-300",
-                  format === f.id
-                    ? "glow-red bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
+        <div className="mx-auto max-w-7xl px-5 py-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2.5">
+              <span
+                className="grid h-9 w-9 place-items-center rounded-lg"
+                style={{ background: "var(--gradient-red)", boxShadow: "var(--glow-red)" }}
               >
-                {f.name}
-              </button>
-            ))}
+                <Clapperboard className="h-5 w-5 text-primary-foreground" />
+              </span>
+              <span className="font-display text-lg font-bold tracking-[0.18em]">CINE-VR</span>
+            </div>
+
+            <div className="hidden h-8 w-px bg-border md:block" />
+
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-bold sm:text-lg">
+                Ingressos com <span className="text-gradient-red">prévia 3D</span>
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                {movie ? `${movie.title} · ${showtime ?? "escolha o horário"}` : "Sala 07 · Hoje"}
+              </p>
+            </div>
+
+            {step === 2 && (
+              <div className="ml-auto flex flex-wrap gap-1.5 rounded-xl border border-border p-1">
+                {FORMATS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setFormat(f.id)}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-300",
+                      format === f.id
+                        ? "glow-red bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {f.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <Stepper current={step} />
           </div>
         </div>
       </header>
 
       <main className="mx-auto grid max-w-7xl gap-8 px-5 py-8 lg:grid-cols-[1fr_340px]">
         <div className="space-y-10">
-          <section>
-            <SectionTitle
-              eyebrow="Sensory Preview"
-              title="Your view from the seat"
-              hint={
-                focusSeat
-                  ? `Camera locked to seat ${focusSeat}`
-                  : "Select a seat to move the camera"
-              }
-            />
-            <div className="glass relative h-[420px] overflow-hidden rounded-2xl">
-              <ClientOnly fallback={<CanvasFallback />}>
-                <Suspense fallback={<CanvasFallback />}>
-                  <TheaterScene format={format} focusSeat={focusSeat} />
-                </Suspense>
-              </ClientOnly>
-              <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2 rounded-full border border-primary/40 bg-background/60 px-3 py-1 text-[11px] uppercase tracking-[0.25em] backdrop-blur">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                {activeFormat.name}
-              </div>
-              <p className="pointer-events-none absolute bottom-4 right-4 text-[11px] text-muted-foreground">
-                {activeFormat.blurb}
-              </p>
-            </div>
-          </section>
+          {step === 1 && (
+            <section>
+              <SectionTitle
+                eyebrow="Etapa 1"
+                title="Escolha o filme e a sessão"
+                hint="Sessões de hoje · Sala 07"
+              />
+              <MoviePicker
+                movieId={movieId}
+                showtime={showtime}
+                onSelectMovie={(m: Movie) => setMovieId(m.id)}
+                onSelect={(m, t) => {
+                  setMovieId(m.id);
+                  setShowtime(t);
+                }}
+              />
+            </section>
+          )}
 
-          <section>
-            <SectionTitle
-              eyebrow="Seating"
-              title="Choose your seats"
-              hint={`Rows A–G · ${currency(activeFormat.price)} per seat`}
-            />
-            <SeatMap selected={seats} onToggle={toggleSeat} />
-          </section>
+          {step === 2 && (
+            <>
+              <section>
+                <SectionTitle
+                  eyebrow="Prévia sensorial"
+                  title="Sua visão da poltrona"
+                  hint={
+                    focusSeat
+                      ? `Câmera travada no assento ${focusSeat}`
+                      : "Selecione um assento para mover a câmera"
+                  }
+                />
+                <div className="glass relative h-[420px] overflow-hidden rounded-2xl">
+                  <ClientOnly fallback={<CanvasFallback />}>
+                    <Suspense fallback={<CanvasFallback />}>
+                      <TheaterScene format={format} focusSeat={focusSeat} />
+                    </Suspense>
+                  </ClientOnly>
+                  <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2 rounded-full border border-primary/40 bg-background/60 px-3 py-1 text-[11px] uppercase tracking-[0.25em] backdrop-blur">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    {activeFormat.name}
+                  </div>
+                  <p className="pointer-events-none absolute bottom-4 right-4 text-[11px] text-muted-foreground">
+                    {activeFormat.blurb}
+                  </p>
+                </div>
+              </section>
 
-          <section>
-            <SectionTitle eyebrow="Concessions" title="Snacks & drinks" hint="Served to your row" />
-            <Concessions quantities={quantities} onChange={changeQty} />
-          </section>
+              <section>
+                <SectionTitle
+                  eyebrow="Etapa 2"
+                  title="Escolha seus assentos"
+                  hint={`Fileiras A–G · ${currency(activeFormat.price)} por assento`}
+                />
+                <SeatMap selected={seats} onToggle={toggleSeat} />
+              </section>
+            </>
+          )}
+
+          {step === 3 && (
+            <section>
+              <SectionTitle
+                eyebrow="Etapa 3"
+                title="Bomboniere & snacks"
+                hint="Entrega na sua fileira"
+              />
+              <Concessions quantities={quantities} onChange={changeQty} />
+            </section>
+          )}
+
+          {step === 4 && (
+            <section>
+              <SectionTitle
+                eyebrow="Etapa 4"
+                title="Pagamento"
+                hint={`${seats.length} ingresso(s) · ${snackLines.length} item(ns)`}
+              />
+              <Payment
+                method={method}
+                onMethod={setMethod}
+                pixPayload={pixPayload}
+                total={grandTotal}
+                card={card}
+                onCard={(patch) => setCard((c) => ({ ...c, ...patch }))}
+              />
+            </section>
+          )}
+
+          {step === 5 && movie && showtime && (
+            <section>
+              <SectionTitle
+                eyebrow="Etapa 5"
+                title="Seu ingresso digital"
+                hint="Apresente o QR Code na entrada"
+              />
+              <Voucher
+                code={code}
+                movie={movie}
+                format={activeFormat}
+                showtime={showtime}
+                seats={seats}
+                snackLines={snackLines}
+                total={grandTotal}
+              />
+            </section>
+          )}
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:h-fit">
-          <div className="glass rounded-2xl p-5">
-            <h2 className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Your order</h2>
-
-            <div className="mt-4 space-y-3 text-sm">
-              <Line label="Format" value={activeFormat.name} />
-              <Line
-                label={`Seats (${seats.length})`}
-                value={seats.length ? [...seats].sort().join(", ") : "None selected"}
-              />
-              <Line label="Tickets" value={currency(ticketsTotal)} />
-
-              {snackLines.length > 0 && (
-                <div className="space-y-2 border-t border-border pt-3">
-                  {snackLines.map((l) => (
-                    <Line key={l.id} label={`${l.qty}× ${l.name}`} value={currency(l.total)} />
-                  ))}
-                </div>
-              )}
-
-              <Line label="Booking fee" value={currency(fees)} />
-            </div>
-
-            <div className="mt-5 flex items-end justify-between border-t border-border pt-4">
-              <span className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                Grand total
-              </span>
-              <span className="font-display text-2xl font-bold text-gradient-red">
-                {currency(grandTotal)}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              disabled={seats.length === 0}
-              onClick={() => {
-                setPurchased(false);
-                setConfirmOpen(true);
-              }}
-              className="glow-red mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground transition-transform duration-300 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-            >
-              <Ticket className="h-4 w-4" />
-              Finalize purchase
-            </button>
-            {seats.length === 0 && (
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                Select at least one seat to continue
-              </p>
-            )}
-          </div>
+        <aside className="lg:sticky lg:top-44 lg:h-fit">
+          <OrderSidebar
+            step={step}
+            lines={sidebarLines}
+            total={grandTotal}
+            canAdvance={canAdvance}
+            nextLabel={nextLabel}
+            hint={hint}
+            onBack={() => setStep((s) => Math.max(1, s - 1))}
+            onNext={goNext}
+          />
         </aside>
       </main>
-
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="border-primary/30 bg-popover">
-          <DialogHeader>
-            <DialogTitle className="font-display">
-              {purchased ? "Enjoy the show" : "Confirm your booking"}
-            </DialogTitle>
-            <DialogDescription>
-              {purchased
-                ? `Tickets for ${[...seats].sort().join(", ")} are reserved. Show this screen at Hall 07.`
-                : `${seats.length} seat(s) in ${activeFormat.name}, ${snackLines.length} concession item(s).`}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex items-center justify-between rounded-xl border border-primary/30 px-4 py-3">
-            <span className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Total</span>
-            <span className="font-display text-xl font-bold text-gradient-red">
-              {currency(grandTotal)}
-            </span>
-          </div>
-
-          <DialogFooter>
-            {purchased ? (
-              <button
-                type="button"
-                onClick={() => setConfirmOpen(false)}
-                className="glow-red w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground"
-              >
-                Done
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setConfirmOpen(false)}
-                  className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPurchased(true)}
-                  className="glow-red rounded-xl bg-primary px-4 py-2.5 text-sm font-bold uppercase tracking-[0.15em] text-primary-foreground"
-                >
-                  Pay {currency(grandTotal)}
-                </button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
+}
+
+function hashCode(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
+  return h;
 }
 
 function CanvasFallback() {
   return (
     <div className="grid h-full w-full place-items-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
-      Booting projector…
+      Ligando o projetor…
     </div>
   );
 }
@@ -289,15 +354,6 @@ function SectionTitle({
         <h2 className="text-xl font-bold">{title}</h2>
       </div>
       <p className="text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
-}
-
-function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value}</span>
     </div>
   );
 }

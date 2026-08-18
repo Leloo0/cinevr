@@ -15,7 +15,7 @@ export function SeatMap({ selected, onToggle }: Props) {
           style={{ background: "var(--gradient-red)", boxShadow: "var(--glow-red)" }}
         />
         <p className="mt-2 text-center text-[11px] uppercase tracking-[0.4em] text-muted-foreground">
-          Screen
+          Tela
         </p>
       </div>
 
@@ -32,7 +32,7 @@ export function SeatMap({ selected, onToggle }: Props) {
                   key={id}
                   type="button"
                   disabled={occupied}
-                  aria-label={`Seat ${id}${occupied ? " occupied" : ""}`}
+                  aria-label={`Assento ${id}${occupied ? " ocupado" : ""}`}
                   onClick={() => onToggle(id)}
                   className={cn(
                     "h-7 w-7 shrink-0 rounded-md border text-[10px] font-semibold transition-all duration-300",
@@ -55,9 +55,9 @@ export function SeatMap({ selected, onToggle }: Props) {
       </div>
 
       <div className="mt-6 flex flex-wrap justify-center gap-5 text-xs text-muted-foreground">
-        <Legend className="bg-secondary border border-border" label="Available" />
-        <Legend className="bg-primary glow-red" label="Selected" />
-        <Legend className="bg-muted/40" label="Occupied" />
+        <Legend className="bg-secondary border border-border" label="Disponível" />
+        <Legend className="bg-primary glow-red" label="Selecionado" />
+        <Legend className="bg-muted/40" label="Ocupado" />
       </div>
     </div>
   );

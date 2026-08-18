@@ -45,7 +45,7 @@ export function Concessions({ quantities, onChange }: Props) {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      aria-label={`Remove one ${s.name}`}
+                      aria-label={`Remover um ${s.name}`}
                       onClick={() => onChange(s.id, -1)}
                       disabled={qty === 0}
                       className="grid h-7 w-7 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-foreground disabled:opacity-30"
@@ -55,7 +55,7 @@ export function Concessions({ quantities, onChange }: Props) {
                     <span className="w-5 text-center text-sm font-semibold tabular-nums">{qty}</span>
                     <button
                       type="button"
-                      aria-label={`Add one ${s.name}`}
+                      aria-label={`Adicionar um ${s.name}`}
                       onClick={() => onChange(s.id, 1)}
                       className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground transition-transform hover:scale-110"
                     >
